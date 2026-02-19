@@ -45,6 +45,14 @@ export default function Footer() {
                   Cart
                 </Link>
               </li>
+              <li>
+                <Link
+                  to="/checkout"
+                  className="hover:text-white transition-colors"
+                >
+                  Checkout
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -54,7 +62,12 @@ export default function Footer() {
             <ul className="space-y-2 text-sm">
               <li className="flex items-center space-x-2">
                 <HiOutlineMail className="w-4 h-4" />
-                <span>hello@stylevault.ai</span>
+                <a
+                  href="mailto:hello@stylevault.ai"
+                  className="hover:text-white transition-colors"
+                >
+                  hello@stylevault.ai
+                </a>
               </li>
             </ul>
           </div>
