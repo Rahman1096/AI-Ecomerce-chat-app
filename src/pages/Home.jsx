@@ -16,21 +16,21 @@ export default function Home() {
     <div className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-br from-brand-50 via-white to-purple-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 lg:py-32">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <div className="inline-flex items-center space-x-2 bg-brand-100/60 text-brand-700 rounded-full px-4 py-1.5 text-sm font-medium mb-6">
                 <HiOutlineSparkles className="w-4 h-4" />
                 <span>AI-Powered Shopping</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 leading-tight mb-4 sm:mb-6">
                 Your Personal
                 <span className="bg-gradient-to-r from-brand-600 to-purple-600 bg-clip-text text-transparent">
                   {" "}
                   AI Shopkeeper
                 </span>
               </h1>
-              <p className="text-lg text-gray-600 leading-relaxed mb-8 max-w-lg">
+              <p className="text-base sm:text-lg text-gray-600 leading-relaxed mb-6 sm:mb-8 max-w-lg">
                 Don't just browse — talk to our AI Clerk. Ask for
                 recommendations, negotiate prices, and shop entirely through
                 conversation. The future of e-commerce is here.
@@ -177,7 +177,7 @@ export default function Home() {
       {/* CTA Banner */}
       <section className="py-16 bg-gradient-to-r from-brand-600 to-brand-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
             Ready to Shop Smarter?
           </h2>
           <p className="text-brand-100 mb-8 max-w-2xl mx-auto">

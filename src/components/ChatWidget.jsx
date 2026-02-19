@@ -321,7 +321,7 @@ export default function ChatWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 z-50 bg-brand-600 text-white w-14 h-14 rounded-full shadow-xl shadow-brand-600/30 flex items-center justify-center hover:bg-brand-700 transition-all hover:scale-105 group"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 bg-brand-600 text-white w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-xl shadow-brand-600/30 flex items-center justify-center hover:bg-brand-700 transition-all hover:scale-105 group"
           aria-label="Open AI Clerk chat"
         >
           <HiOutlineChatAlt2 className="w-6 h-6" />
@@ -332,7 +332,7 @@ export default function ChatWidget() {
 
       {/* Chat Panel */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 z-50 w-[400px] h-[600px] max-h-[85vh] max-w-[calc(100vw-2rem)] bg-white rounded-2xl shadow-2xl border border-gray-200 flex flex-col overflow-hidden animate-in">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-4 sm:right-4 z-50 w-full sm:w-[400px] h-full sm:h-[600px] sm:max-h-[85vh] sm:max-w-[calc(100vw-2rem)] bg-white sm:rounded-2xl shadow-2xl sm:border border-gray-200 flex flex-col overflow-hidden animate-in">
           {/* Header */}
           <div className="bg-gradient-to-r from-brand-600 to-brand-800 px-4 py-3 flex items-center justify-between flex-shrink-0">
             <div className="flex items-center space-x-3">

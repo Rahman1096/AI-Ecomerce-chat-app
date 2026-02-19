@@ -102,7 +102,7 @@ export default function ProductDetail() {
             <p className="text-sm text-brand-600 font-medium uppercase tracking-wider mb-2">
               {product.category} / {product.subcategory}
             </p>
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
               {product.name}
             </h1>
 
@@ -214,12 +214,12 @@ export default function ProductDetail() {
               <button
                 onClick={handleAddToCart}
                 disabled={!product.inStock}
-                className="flex-1 inline-flex items-center justify-center space-x-2 bg-brand-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 inline-flex items-center justify-center space-x-2 bg-brand-600 text-white px-4 sm:px-6 py-3 sm:py-3.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25 disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
               >
                 <HiOutlineShoppingBag className="w-5 h-5" />
                 <span>{product.inStock ? "Add to Cart" : "Out of Stock"}</span>
               </button>
-              <button className="w-14 h-14 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+              <button className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors flex-shrink-0">
                 <HiOutlineHeart className="w-5 h-5 text-gray-400" />
               </button>
             </div>

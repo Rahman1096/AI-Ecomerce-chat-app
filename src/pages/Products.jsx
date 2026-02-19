@@ -88,8 +88,8 @@ export default function Products() {
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 mb-8">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 mb-6 sm:mb-8">
+          <div className="flex flex-col gap-3 sm:gap-4 md:flex-row">
             {/* Search */}
             <div className="flex-1 relative">
               <HiOutlineSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
@@ -104,13 +104,13 @@ export default function Products() {
 
             {/* Category */}
             <div className="flex items-center space-x-2">
-              <HiOutlineAdjustments className="text-gray-400 w-5 h-5 flex-shrink-0" />
-              <div className="flex flex-wrap gap-2">
+              <HiOutlineAdjustments className="text-gray-400 w-5 h-5 flex-shrink-0 hidden sm:block" />
+              <div className="flex overflow-x-auto gap-2 pb-1 -mx-1 px-1 scrollbar-hide">
                 {categories.map((cat) => (
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
                       selectedCategory === cat
                         ? "bg-brand-600 text-white shadow-sm"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -126,7 +126,7 @@ export default function Products() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white"
+              className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white w-full sm:w-auto"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
