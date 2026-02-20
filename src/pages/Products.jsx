@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import ProductCard from "../components/ProductCard";
 import products from "../data/products";
 import { useFilter } from "../context/FilterContext";
+import useScrollReveal from "../hooks/useScrollReveal";
 import { HiOutlineSearch, HiOutlineAdjustments } from "react-icons/hi";
 
 const categories = ["All", ...new Set(products.map((p) => p.category))];
@@ -24,16 +25,15 @@ export default function Products() {
     setSearchQuery,
     highlightedProducts,
   } = useFilter();
+  const revealRef = useScrollReveal();
 
   const filtered = useMemo(() => {
     let result = [...products];
 
-    // Category filter
     if (selectedCategory !== "All") {
       result = result.filter((p) => p.category === selectedCategory);
     }
 
-    // Search
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -45,7 +45,6 @@ export default function Products() {
       );
     }
 
-    // Sort
     switch (sortBy) {
       case "price-low":
         result.sort((a, b) => a.price - b.price);
@@ -60,7 +59,6 @@ export default function Products() {
         result.sort((a, b) => a.name.localeCompare(b.name));
         break;
       default:
-        // featured — keep default order but put highlighted first
         if (highlightedProducts.length > 0) {
           result.sort((a, b) => {
             const aH = highlightedProducts.includes(a.id) ? 0 : 1;
@@ -74,10 +72,10 @@ export default function Products() {
   }, [sortBy, selectedCategory, searchQuery, highlightedProducts]);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 page-enter" ref={revealRef}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-8 animate-fade-up">
           <h1 className="text-3xl font-bold text-gray-900">
             Shop All Products
           </h1>
@@ -88,7 +86,7 @@ export default function Products() {
         </div>
 
         {/* Filters Bar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 mb-6 sm:mb-8">
+        <div className="animate-fade-up bg-white rounded-2xl shadow-sm border border-gray-100 p-3 sm:p-4 mb-6 sm:mb-8">
           <div className="flex flex-col gap-3 sm:gap-4 md:flex-row">
             {/* Search */}
             <div className="flex-1 relative">
@@ -110,9 +108,9 @@ export default function Products() {
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all whitespace-nowrap flex-shrink-0 ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 whitespace-nowrap flex-shrink-0 ${
                       selectedCategory === cat
-                        ? "bg-brand-600 text-white shadow-sm"
+                        ? "bg-brand-600 text-white shadow-sm shadow-brand-600/25"
                         : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
@@ -126,7 +124,7 @@ export default function Products() {
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white w-full sm:w-auto"
+              className="px-3 py-2.5 rounded-xl border border-gray-200 text-sm text-gray-600 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none bg-white w-full sm:w-auto transition-all"
             >
               {sortOptions.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -139,17 +137,21 @@ export default function Products() {
 
         {/* Product Grid */}
         {filtered.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 stagger-children">
             {filtered.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                highlighted={highlightedProducts.includes(product.id)}
-              />
+              <div key={product.id} className="animate-fade-up">
+                <ProductCard
+                  product={product}
+                  highlighted={highlightedProducts.includes(product.id)}
+                />
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
+          <div className="text-center py-20 animate-fade-up">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <HiOutlineSearch className="w-8 h-8 text-gray-300" />
+            </div>
             <p className="text-gray-400 text-lg">
               No products found matching your criteria.
             </p>
@@ -159,7 +161,7 @@ export default function Products() {
                 setSelectedCategory("All");
                 setSortBy("featured");
               }}
-              className="mt-4 text-brand-600 hover:text-brand-700 font-medium text-sm"
+              className="mt-4 text-brand-600 hover:text-brand-700 font-medium text-sm transition-colors"
             >
               Clear all filters
             </button>
