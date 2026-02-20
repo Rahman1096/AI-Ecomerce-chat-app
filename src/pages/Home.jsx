@@ -4,7 +4,7 @@ import {
   HiOutlineShoppingBag,
   HiOutlineChatAlt2,
   HiArrowRight,
-} from "react-icons/hi";
+} from "react-icons/hi"; ee
 import ProductCard from "../components/ProductCard";
 import products from "../data/products";
 

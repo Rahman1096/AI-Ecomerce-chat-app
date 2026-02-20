@@ -1,14 +1,29 @@
 import { useState } from "react";
 import { useCart } from "../context/CartContext";
 import { Link, useNavigate } from "react-router-dom";
-import { HiOutlineCheck, HiArrowLeft } from "react-icons/hi";
+import { HiOutlineCheck, HiArrowLeft, HiLockClosed } from "react-icons/hi";
 import toast from "react-hot-toast";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
-export default function Checkout() {
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+/* ── Stripe-aware inner form ── */
+function CheckoutForm() {
   const { items, coupon, getCartTotal, clearCart } = useCart();
   const { subtotal, discount, total } = getCartTotal();
   const navigate = useNavigate();
+  const stripe = useStripe();
+  const elements = useElements();
+
   const [placed, setPlaced] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [cardError, setCardError] = useState(null);
 
   const [form, setForm] = useState({
     firstName: "",
@@ -19,30 +34,76 @@ export default function Checkout() {
     city: "",
     state: "",
     zip: "",
-    cardNumber: "",
-    cardExpiry: "",
-    cardCVC: "",
   });
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate order placement
-    setPlaced(true);
-    clearCart();
-    toast.success("Order placed successfully!", {
-      duration: 4000,
-      style: {
-        borderRadius: "12px",
-        background: "#333",
-        color: "#fff",
-      },
-    });
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+    setCardError(null);
+
+    try {
+      /* 1 ─ Create PaymentIntent on backend */
+      const res = await fetch("/api/create-payment-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          amount: Math.round(total * 100), // cents
+          metadata: {
+            customer: `${form.firstName} ${form.lastName}`,
+            email: form.email,
+          },
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Payment failed");
+
+      /* 2 ─ Confirm payment with card element */
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        data.clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(CardElement),
+            billing_details: {
+              name: `${form.firstName} ${form.lastName}`,
+              email: form.email,
+              phone: form.phone,
+              address: {
+                line1: form.address,
+                city: form.city,
+                state: form.state,
+                postal_code: form.zip,
+              },
+            },
+          },
+        }
+      );
+
+      if (error) {
+        setCardError(error.message);
+        toast.error(error.message);
+      } else if (paymentIntent.status === "succeeded") {
+        setPlaced(true);
+        clearCart();
+        toast.success("Payment successful! Order placed.", {
+          duration: 4000,
+          style: { borderRadius: "12px", background: "#333", color: "#fff" },
+        });
+      }
+    } catch (err) {
+      setCardError(err.message);
+      toast.error(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  /* ── Order confirmed screen ── */
   if (placed) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -70,6 +131,7 @@ export default function Checkout() {
     );
   }
 
+  /* ── Empty cart guard ── */
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -88,6 +150,19 @@ export default function Checkout() {
     );
   }
 
+  /* ── Stripe CardElement styles ── */
+  const cardStyle = {
+    style: {
+      base: {
+        fontSize: "15px",
+        color: "#1f2937",
+        fontFamily: "'Inter', system-ui, sans-serif",
+        "::placeholder": { color: "#9ca3af" },
+      },
+      invalid: { color: "#ef4444" },
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -103,7 +178,7 @@ export default function Checkout() {
 
         <form onSubmit={handleSubmit}>
           <div className="grid lg:grid-cols-3 gap-8">
-            {/* Form */}
+            {/* ── Left column: fields ── */}
             <div className="lg:col-span-2 space-y-6">
               {/* Contact */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
@@ -228,61 +303,27 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Payment */}
+              {/* Payment — Stripe CardElement */}
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">
-                  Payment
-                </h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Card Number
-                    </label>
-                    <input
-                      type="text"
-                      name="cardNumber"
-                      value={form.cardNumber}
-                      onChange={handleChange}
-                      placeholder="4242 4242 4242 4242"
-                      required
-                      className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        Expiry
-                      </label>
-                      <input
-                        type="text"
-                        name="cardExpiry"
-                        value={form.cardExpiry}
-                        onChange={handleChange}
-                        placeholder="MM/YY"
-                        required
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        CVC
-                      </label>
-                      <input
-                        type="text"
-                        name="cardCVC"
-                        value={form.cardCVC}
-                        onChange={handleChange}
-                        placeholder="123"
-                        required
-                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-brand-500 focus:ring-2 focus:ring-brand-100 outline-none text-sm"
-                      />
-                    </div>
-                  </div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-gray-900">Payment</h2>
+                  <span className="inline-flex items-center space-x-1 text-xs text-gray-400">
+                    <HiLockClosed className="w-3.5 h-3.5" />
+                    <span>Secured by Stripe</span>
+                  </span>
                 </div>
+
+                <div className="px-4 py-3.5 rounded-xl border border-gray-200 focus-within:border-brand-500 focus-within:ring-2 focus-within:ring-brand-100 transition-all">
+                  <CardElement options={cardStyle} />
+                </div>
+
+                {cardError && (
+                  <p className="mt-2 text-sm text-red-500">{cardError}</p>
+                )}
               </div>
             </div>
 
-            {/* Summary Sidebar */}
+            {/* ── Right column: summary ── */}
             <div>
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm sticky top-24">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">
@@ -346,9 +387,35 @@ export default function Checkout() {
 
                 <button
                   type="submit"
-                  className="w-full bg-brand-600 text-white py-3.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25"
+                  disabled={!stripe || loading}
+                  className="w-full bg-brand-600 text-white py-3.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
-                  Place Order — ${total.toFixed(2)}
+                  {loading ? (
+                    <>
+                      <svg
+                        className="animate-spin h-5 w-5 text-white"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                          fill="none"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                        />
+                      </svg>
+                      <span>Processing…</span>
+                    </>
+                  ) : (
+                    <span>Pay ${total.toFixed(2)}</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -356,5 +423,14 @@ export default function Checkout() {
         </form>
       </div>
     </div>
+  );
+}
+
+/* ── Outer wrapper: provides Stripe context ── */
+export default function Checkout() {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm />
+    </Elements>
   );
 }
