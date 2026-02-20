@@ -860,6 +860,8 @@ const SYSTEM_PROMPT = `You are "The Clerk" — a witty, charming AI shopkeeper a
 12. After adding to cart: confirm briefly + suggest 1 complementary item
 13. Keep responses SHORT: 2-3 sentences max
 14. CART TRUTH: The [CURRENT CART: ...] tag in each user message is the REAL cart state — trust it over conversation history. If it says EMPTY, the cart IS empty regardless of what was said before. NEVER hallucinate cart contents.
+15. NEVER say you added something without calling a tool. If you cannot call a tool, say you couldn't do it. ONLY claim success AFTER receiving a tool result with success:true.
+16. You MUST call search_and_add_to_cart to add items. Saying "added!" without calling the tool is LYING and FORBIDDEN.
 
 ═══ CORRECT EXAMPLES ═══
 User: "add the blazer to cart" → search_and_add_to_cart(query:"blazer")
@@ -1352,7 +1354,15 @@ export async function chatWithClerk(
             },
             body: JSON.stringify({
               model: "llama-3.1-8b-instant",
-              messages,
+              messages: [
+                {
+                  role: "system",
+                  content:
+                    "You are a helpful shopping assistant at StyleVault. You CANNOT add items to cart or perform actions in this mode. If the user asks to add/buy/remove items, tell them to try again in a moment. Only answer questions and give recommendations.",
+                },
+                ...conversationHistory,
+                { role: "user", content: userMessage },
+              ],
               temperature: 0.6,
               max_tokens: 1024,
             }),
@@ -1383,6 +1393,57 @@ export async function chatWithClerk(
         !assistantMessage.tool_calls ||
         assistantMessage.tool_calls.length === 0
       ) {
+        // ── Safety net: detect if LLM CLAIMS to have added something without calling a tool ──
+        const reply = assistantMessage.content || "";
+        const claimsAdded =
+          /(?:added|put|placed|tossed|thrown)\s+.+?(?:to|in|into)\s+(?:your|the)?\s*cart/i.test(
+            reply
+          ) || /\u2705.*(?:add|cart)/i.test(reply);
+        const actuallyAdded = actions.some(
+          (a) =>
+            a.function === "add_to_cart" ||
+            a.function === "search_and_add_to_cart"
+        );
+
+        if (claimsAdded && !actuallyAdded) {
+          // LLM lied about adding. Try to extract product name and actually add it.
+          const productMatch =
+            reply.match(/(?:added|put)\s+\*\*(?:\[)?([^*\]]+)/i) ||
+            reply.match(/(?:added|put)\s+([^\s](?:[^.!,]){2,40})\s+(?:to|in)/i);
+          if (productMatch) {
+            const productName = productMatch[1].replace(/[\[\]\*]/g, "").trim();
+            const product = findProductByName(productName);
+            if (product && product.inStock) {
+              const color = product.colors[0];
+              const size = product.sizes[0];
+              if (actionCallbacks?.addToCart) {
+                actionCallbacks.addToCart(product, color, size, 1);
+              }
+              actions.push({
+                function: "add_to_cart",
+                args: { product_id: product.id },
+                result: { success: true },
+              });
+            } else {
+              // Can't find the product — correct the lie
+              return {
+                reply:
+                  'Hmm, I couldn\'t actually find that product. Could you tell me the exact name? Try asking like: "add [product name] to cart".',
+                updatedHistory: [
+                  ...conversationHistory,
+                  { role: "user", content: userMessage },
+                  {
+                    role: "assistant",
+                    content:
+                      "Hmm, I couldn't actually find that product. Could you tell me the exact name?",
+                  },
+                ],
+                actions,
+              };
+            }
+          }
+        }
+
         return {
           reply: assistantMessage.content,
           updatedHistory: [
