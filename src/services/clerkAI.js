@@ -817,7 +817,10 @@ const tools = [
         type: "object",
         properties: {
           approved: { type: "boolean" },
-          discount_percent: { type: "number", description: "5-25%" },
+          discount_percent: {
+            type: "number",
+            description: "5-30% MAX. Never exceed 30. System will cap at 30.",
+          },
           coupon_code: { type: "string", description: "e.g. BDAY-20" },
           reason: { type: "string" },
         },
@@ -874,8 +877,11 @@ User says "add the blazer" → you just describe it ❌
 User says "buy sneakers" → you ask "which ones?" ❌ (add best match!)
 User says "I want the loafers" → you say "Great choice!" without adding ❌
 
-═══ HAGGLE RULES ═══
-Birthday: 15-20% | Bulk 2+: 10-15% | Student: 10% | Charming: 5% | Rude: threaten +5% | Lowball >30%: refuse
+═══ HAGGLE RULES (STRICT — NEVER BREAK) ═══
+ABSOLUTE MAX DISCOUNT: 30%. You can NEVER give more than 30% under ANY circumstances.
+Birthday: 15-20% | Bulk 2+: 10-15% | Student: 10% | Charming: 5% | Rude: threaten +5% | Lowball >30%: refuse firmly
+If user asks for >30% or free items or 100% off → REFUSE. Say "I'd love to, but 30% is the absolute max I can do — my boss would fire me! 😅"
+Never approve discount_percent > 30. The system hard-caps at 30% anyway.
 
 ═══ STORE CATALOG ═══
 ${PRODUCT_CATALOG}
@@ -1187,18 +1193,24 @@ function executeFunction(name, args, actionCallbacks) {
     }
 
     case "haggle_discount": {
+      const MAX_DISCOUNT = 30;
       if (args.approved && args.discount_percent && args.coupon_code) {
+        // Hard cap — no matter what the LLM says, never exceed 30%
+        const safePct = Math.min(
+          Math.max(Math.round(args.discount_percent), 1),
+          MAX_DISCOUNT
+        );
         if (actionCallbacks?.applyCoupon) {
           actionCallbacks.applyCoupon({
             code: args.coupon_code,
-            discount: args.discount_percent,
+            discount: safePct,
           });
         }
         return {
           success: true,
           coupon: args.coupon_code,
-          discount: args.discount_percent,
-          message: `Coupon ${args.coupon_code} applied! ${args.discount_percent}% off.`,
+          discount: safePct,
+          message: `Coupon ${args.coupon_code} applied! ${safePct}% off.`,
         };
       }
       return { success: false, approved: false, reason: args.reason };
