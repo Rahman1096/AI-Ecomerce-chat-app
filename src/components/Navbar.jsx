@@ -1,27 +1,19 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { useCart } from "../context/CartContext";
-import { useAuth } from "../context/AuthContext";
-import toast from "react-hot-toast";
 import {
   HiOutlineShoppingBag,
   HiOutlineMenu,
   HiOutlineX,
-  HiOutlineLogout,
-  HiOutlineUser,
 } from "react-icons/hi";
 
 export default function Navbar() {
   const { getCartCount } = useCart();
-  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [cartBounce, setCartBounce] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const profileRef = useRef(null);
   const count = getCartCount();
   const location = useLocation();
-  const navigate = useNavigate();
 
   /* Track scroll for shadow */
   useEffect(() => {
@@ -40,32 +32,7 @@ export default function Navbar() {
   }, [count]);
 
   /* Close mobile nav on route change */
-  useEffect(() => {
-    setMobileOpen(false);
-    setProfileOpen(false);
-  }, [location]);
-
-  /* Close profile dropdown on outside click */
-  useEffect(() => {
-    const handler = (e) => {
-      if (profileRef.current && !profileRef.current.contains(e.target))
-        setProfileOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const handleLogout = async () => {
-    await logout();
-    toast.success("Signed out");
-    navigate("/");
-  };
-
-  const getInitials = () => {
-    if (!user) return "";
-    if (user.displayName) return user.displayName.charAt(0).toUpperCase();
-    return user.email?.charAt(0).toUpperCase() || "U";
-  };
+  useEffect(() => setMobileOpen(false), [location]);
 
   const navLink = (to, label) => {
     const active = location.pathname === to;
@@ -105,10 +72,9 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden md:flex items-center space-x-8">
             {navLink("/", "Home")}
             {navLink("/products", "Shop")}
-
             <Link to="/cart" className="relative group">
               <HiOutlineShoppingBag className="w-6 h-6 text-gray-600 group-hover:text-gray-900 transition-colors duration-200" />
               {count > 0 && (
@@ -121,57 +87,6 @@ export default function Navbar() {
                 </span>
               )}
             </Link>
-
-            {/* Auth Section */}
-            {user ? (
-              <div className="relative" ref={profileRef}>
-                <button
-                  onClick={() => setProfileOpen(!profileOpen)}
-                  className="flex items-center space-x-2 pl-4 border-l border-gray-200"
-                >
-                  {user.photoURL ? (
-                    <img
-                      src={user.photoURL}
-                      alt=""
-                      className="w-8 h-8 rounded-full object-cover ring-2 ring-brand-100 hover:ring-brand-300 transition-all"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-sm font-bold ring-2 ring-brand-100 hover:ring-brand-300 transition-all">
-                      {getInitials()}
-                    </div>
-                  )}
-                </button>
-
-                {/* Profile Dropdown */}
-                {profileOpen && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 animate-slide-up">
-                    <div className="px-4 py-2 border-b border-gray-100">
-                      <p className="text-sm font-semibold text-gray-900 truncate">
-                        {user.displayName || "User"}
-                      </p>
-                      <p className="text-xs text-gray-400 truncate">
-                        {user.email}
-                      </p>
-                    </div>
-                    <button
-                      onClick={handleLogout}
-                      className="w-full flex items-center space-x-2 px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50 hover:text-red-600 transition-colors"
-                    >
-                      <HiOutlineLogout className="w-4 h-4" />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link
-                to="/login"
-                className="flex items-center space-x-1.5 pl-4 border-l border-gray-200 text-sm font-medium text-gray-600 hover:text-brand-600 transition-colors"
-              >
-                <HiOutlineUser className="w-5 h-5" />
-                <span>Sign In</span>
-              </Link>
-            )}
           </div>
 
           {/* Mobile menu button */}
@@ -204,7 +119,7 @@ export default function Navbar() {
         {/* Mobile Nav with slide animation */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-out-expo ${
-            mobileOpen ? "max-h-72 opacity-100 pb-4" : "max-h-0 opacity-0"
+            mobileOpen ? "max-h-40 opacity-100 pb-4" : "max-h-0 opacity-0"
           }`}
         >
           <div className="border-t border-gray-100 pt-4 space-y-1">
@@ -230,48 +145,6 @@ export default function Navbar() {
             >
               Shop
             </Link>
-
-            {/* Mobile Auth */}
-            <div className="border-t border-gray-100 pt-2 mt-2">
-              {user ? (
-                <div className="flex items-center justify-between px-3 py-2">
-                  <div className="flex items-center space-x-2 min-w-0">
-                    {user.photoURL ? (
-                      <img
-                        src={user.photoURL}
-                        alt=""
-                        className="w-7 h-7 rounded-full object-cover flex-shrink-0"
-                      />
-                    ) : (
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-brand-500 to-brand-700 flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                        {getInitials()}
-                      </div>
-                    )}
-                    <span className="text-sm font-medium text-gray-700 truncate">
-                      {user.displayName || user.email}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setMobileOpen(false);
-                      handleLogout();
-                    }}
-                    className="text-xs text-red-500 hover:text-red-600 font-medium flex-shrink-0"
-                  >
-                    Sign Out
-                  </button>
-                </div>
-              ) : (
-                <Link
-                  to="/login"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center space-x-2 py-2.5 px-3 rounded-lg font-medium text-brand-600 hover:bg-brand-50 transition-colors"
-                >
-                  <HiOutlineUser className="w-5 h-5" />
-                  <span>Sign In</span>
-                </Link>
-              )}
-            </div>
           </div>
         </div>
       </div>
